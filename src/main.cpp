@@ -9,6 +9,11 @@ int main(int argc, char *argv[]) {
     argparse::ArgumentParser program("traffic");
 
     // clang-format off
+    program.add_argument("--lanes")
+    .help("the number of lanes")
+    .default_value(1)
+    .scan<'d', int>();
+
     program.add_argument("length")
     .help("N, the length of the road")
     .scan<'d', int>();
@@ -47,7 +52,8 @@ int main(int argc, char *argv[]) {
     const int steps = program.get<int>("steps");
 
     try {
-        traffic::TrafficSim sim({.length = program.get<int>("length"),
+        traffic::TrafficSim sim({.lanes = program.get<int>("lanes"),
+                                 .length = program.get<int>("length"),
                                  .density = program.get<double>("density"),
                                  .vMax = program.get<int>("vMax"),
                                  .brakeProb = program.get<double>("brakeProb"),
@@ -58,6 +64,8 @@ int main(int argc, char *argv[]) {
             sim.step();
             sim.print(std::cout);
         }
+        std::cout << "Average Velocity: " << sim.avgVelocity() << "\n";
+
     } catch (const std::invalid_argument &err) {
         std::cerr << err.what() << std::endl;
         std::cerr << program;
