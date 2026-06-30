@@ -64,7 +64,18 @@ int main(int argc, char *argv[]) {
             sim.step();
             sim.print(std::cout);
         }
-        std::cout << "Average Velocity: " << sim.avgVelocity() << "\n";
+
+        std::cout << "Final timestep\n";
+        std::cout << "Average Velocity (total): " << sim.avgVelocity() << "\n";
+        std::cout << "Flow Rate (total): " << sim.flowrate() << "\n";
+        std::cout << "Lane Changes: " << sim.laneChangeFrequency() << "\n";
+        std::cout << "\n";
+        for (int i = 0; i < sim.params_.lanes; ++i) {
+            std::cout << "Lane " << i << "\n";
+            std::cout << "  Average Velocity: " << sim.avgVelocity(i) << "\n";
+            std::cout << "  Lane Usage: " << sim.laneUsage(i) << "\n";
+            std::cout << "  Flow Rate: " << sim.flowrate(i) << "\n";
+        }
 
     } catch (const std::invalid_argument &err) {
         std::cerr << err.what() << std::endl;

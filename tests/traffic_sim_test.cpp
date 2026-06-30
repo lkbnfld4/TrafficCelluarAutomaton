@@ -175,6 +175,36 @@ TEST_CASE("lane changes preserves car", "[sim][lanechange]") {
     }
 }
 
+TEST_CASE("traffic metrics", "[sim][metrics]") {
+    traffic::TrafficSim sim(deterministicParams(3, 32, 3, 5, 5));
+    const Road positions = {{5}, {10}, {15}};
+    sim.setup(positions);
+    CHECK(sim.laneUsage(0) == 1.0 / 3);
+    CHECK(sim.laneUsage(1) == 1.0 / 3);
+    CHECK(sim.laneUsage(2) == 1.0 / 3);
+    CHECK(sim.flowrate() == 0.0);
+
+    sim.step(); // 2 left to right changes
+    CHECK(sim.laneUsage(0) == 0.0);
+    CHECK(sim.laneUsage(1) == 1.0 / 3);
+    CHECK(sim.laneUsage(2) == 2.0 / 3);
+    CHECK(sim.flowrate(0) == 0.0);
+    CHECK(sim.flowrate(1) == 1.0 / 32);
+    CHECK(sim.flowrate(2) == 2.0 / 32);
+    CHECK(sim.flowrate() == 3.0 / 32);
+    CHECK(sim.laneChangeFrequency() == 2.0 / 3);
+
+    sim.step(); // 2 right to left changes
+    CHECK(sim.laneUsage(0) == 1.0 / 3);
+    CHECK(sim.laneUsage(1) == 1.0 / 3);
+    CHECK(sim.laneUsage(2) == 1.0 / 3);
+    CHECK(sim.flowrate(0) == 2.0 / 32);
+    CHECK(sim.flowrate(1) == 2.0 / 32);
+    CHECK(sim.flowrate(2) == 2.0 / 32);
+    CHECK(sim.flowrate() == 6.0 / 32);
+    CHECK(sim.laneChangeFrequency() == 2.0 / 3);
+}
+
 TEST_CASE("blocked inside lane keeps the car in its lane", "[sim][lanechange]") {
     traffic::TrafficSim sim(deterministicParams(3, 40, 3));
     REQUIRE_NOTHROW(sim.setup({{9}, {7}, {24}}));

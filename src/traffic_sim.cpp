@@ -116,6 +116,7 @@ void TrafficSim::step() { //
 }
 
 void TrafficSim::changeLanes() {
+    laneChanges_ = 0;
     // Nearest leader speed within the lookahead; absence is infinity.
     const auto leaderSpeed = [this](const int lane, const int pos) {
         for (int k = 1; k <= params_.laneChangeLookahead; ++k) {
@@ -191,6 +192,7 @@ void TrafficSim::changeLanes() {
             }
 
             assert(nextRoad_[destLane][pos] < 0);
+            laneChanges_ += (destLane != lane);
             nextRoad_[destLane][pos] = v;
         }
     }
@@ -239,17 +241,27 @@ void TrafficSim::forward() {
     assert(checkCount());
 }
 
-int TrafficSim::countLane(const int lane) const {
+int TrafficSim::countLane(const std::vector<int> &lane) const {
     const auto isCar = [](const int &cell) { return cell >= 0; };
-    return std::ranges::count_if(road_[lane], isCar);
+    return std::ranges::count_if(lane, isCar);
 }
 
 bool TrafficSim::checkCount() const { //
     int total = 0;
     for (int i = 0; i < params_.lanes; ++i) {
-        total += countLane(i);
+        total += countLane(road_[i]);
     }
     return total == numCars_;
+}
+
+int TrafficSim::sumVelocity(const int lane) const {
+    if (lane < 0 || lane >= params_.lanes) {
+        throw std::out_of_range("lane index out of range");
+    }
+
+    auto filterCar = [](const int &cell) { return std::max(cell, 0); };
+
+    return std::transform_reduce(road_[lane].begin(), road_[lane].end(), 0, std::plus{}, filterCar);
 }
 
 double TrafficSim::avgVelocity() const {
@@ -257,11 +269,9 @@ double TrafficSim::avgVelocity() const {
         return 0.0;
     }
 
-    auto filterCar = [](const int &cell) { return std::max(cell, 0); };
-
     int total = 0;
     for (int lane = 0; lane < params_.lanes; ++lane) {
-        total += std::transform_reduce(road_[lane].begin(), road_[lane].end(), 0, std::plus{}, filterCar);
+        total += sumVelocity(lane);
     }
     return static_cast<double>(total) / numCars_;
 }
@@ -271,16 +281,41 @@ double TrafficSim::avgVelocity(const int lane) const {
         throw std::out_of_range("lane index out of range");
     }
 
-    const int cars = countLane(lane);
+    const int cars = countLane(road_[lane]);
     if (cars == 0) {
         return 0.0;
     }
 
-    auto filterCar = [](const int &cell) { return std::max(cell, 0); };
+    return static_cast<double>(sumVelocity(lane)) / cars;
+}
 
-    int total = std::transform_reduce(road_[lane].begin(), road_[lane].end(), 0, std::plus{}, filterCar);
+double TrafficSim::laneUsage(const int lane) const {
+    if (lane < 0 || lane >= params_.lanes) {
+        throw std::out_of_range("lane index out of range");
+    }
+    return numCars_ == 0 ? 0.0 : static_cast<double>(countLane(road_[lane])) / numCars_;
+}
 
-    return static_cast<double>(total) / cars;
+double TrafficSim::flowrate() const {
+    std::int64_t total = 0;
+    for (int lane = 0; lane < params_.lanes; ++lane) {
+        total += sumVelocity(lane);
+    }
+    return static_cast<double>(total) / params_.length;
+}
+
+double TrafficSim::flowrate(const int lane) const {
+    if (lane < 0 || lane >= params_.lanes) {
+        throw std::out_of_range("lane index out of range");
+    }
+    return static_cast<double>(sumVelocity(lane)) / params_.length;
+}
+
+double TrafficSim::laneChangeFrequency() const {
+    if (numCars_ == 0) {
+        return 0.0;
+    }
+    return static_cast<double>(laneChanges_) / numCars_;
 }
 
 void TrafficSim::print(std::ostream &os) const {

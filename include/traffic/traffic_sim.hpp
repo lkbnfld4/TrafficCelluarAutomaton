@@ -24,6 +24,8 @@ struct SimParams {
 // Nagel-Schreckenberg cellular automaton on a circular multi-lane road.
 class TrafficSim {
 public:
+    const SimParams params_;
+
     explicit TrafficSim(const SimParams &params);
 
     // distributes the cars randomly with velocity 0.
@@ -50,19 +52,32 @@ public:
     // average over the cars in lane; zero when empty.
     double avgVelocity(int lane) const;
 
+    // Fraction of all cars in the given lane, or zero when empty.
+    double laneUsage(int lane) const;
+
+    // Sum of per-lane flows across the road.
+    double flowrate() const;
+    // Sum of velocities in the lane divided by the lane length.
+    double flowrate(int lane) const;
+
+    // Lane changes in the most recently completed step, per car.
+    double laneChangeFrequency() const;
+
     // writes the road as one character per cell
     void print(std::ostream &os) const;
 
 private:
     void place(const std::vector<std::vector<int>> &positions);
-    int countLane(const int) const;
     void forward();
     void changeLanes();
 
-    const SimParams params_;
+    int countLane(const std::vector<int> &lane) const;
+    int sumVelocity(int lane) const;
+
     std::vector<std::vector<int>> road_;
     std::vector<std::vector<int>> nextRoad_;
     int numCars_;
+    int laneChanges_ = 0;
     bool left2right = true;
     std::bernoulli_distribution brakeDist_;
     std::mt19937 rng_;
