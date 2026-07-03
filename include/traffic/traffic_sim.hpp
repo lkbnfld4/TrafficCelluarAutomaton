@@ -9,13 +9,13 @@ namespace traffic {
 // parameters for TrafficSim.
 struct SimParams {
     int lanes = 1;
-    int length = 10'000;          // length of the road.
-    double density = 0.3;         // car density for cells occupied.
-    int vMax = 5;                 // maximum velocity of car.
-    double brakeProb = 0.15;      // random braking probability
-    int laneChangeLookahead = 16; // cells ahead in lane-change rule
-    int slack = 3;                // slack delay for lane-change rule
-    int seed = 0;                 // rng seed; 0 is random seed.
+    int length = 10'000;         // length of the road.
+    double density = 0.2;        // car density for cells occupied.
+    int vMax = 5;                // maximum velocity of car.
+    double brakeProb = 0.2;      // random braking probability
+    int laneChangeLookahead = 7; // cells ahead in lane-change rule
+    int slack = 3;               // slack delay for lane-change rule
+    int seed = 0;                // rng seed; 0 is random seed.
 
     // returns these parameters or throws std::invalid_argument
     SimParams validate() const;

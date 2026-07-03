@@ -23,6 +23,17 @@ add_library(traffic_core STATIC src/traffic_sim.cpp)
 target_include_directories(traffic_core PUBLIC include)
 traffic_warnings(traffic_core)
 
+if(SKBUILD)
+    find_package(Python 3.12 REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(nanobind CONFIG REQUIRED)
+
+    set_target_properties(traffic_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    nanobind_add_module(core src/python_bindings.cpp)
+    target_link_libraries(core PRIVATE traffic_core)
+    install(TARGETS core LIBRARY DESTINATION traffic)
+    return()
+endif()
+
 include(FetchContent)
 FetchContent_Declare(
     argparse
